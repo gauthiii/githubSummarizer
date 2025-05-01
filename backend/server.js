@@ -4,7 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import {summarizeRepo } from './gemini.js'; // ✅ NEW import here
+import {summarizeRepo, analyzeCode } from './gemini.js'; // ✅ NEW import here
 
 dotenv.config();
 
@@ -47,6 +47,24 @@ app.post("/summarize", async (req, res) => {
   } catch (error) {
     console.error("Error parsing Gemini result:", error.message);
     res.status(500).json({ error: "Something went wrong parsing the response." });
+  }
+});
+
+
+app.post("/analyze-code", async (req, res) => {
+  const { code } = req.body;
+  if (!code) {
+    return res.status(400).json({ error: "Code is required." });
+  }
+
+  try {
+    const result = await analyzeCode(code);
+    const cleaned = result.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    res.json(parsed);
+  } catch (err) {
+    console.error("Code analysis error:", err.message);
+    res.status(500).json({ error: "Failed to analyze code." });
   }
 });
 
